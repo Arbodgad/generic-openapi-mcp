@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "jetbrains": {
+      "type": "local",
+      "command": [
+        "uv",
+        "run",
+        "--env-file",
+        "C:/Users/USERS/generic-openapi-mcp/.env",
+        "openapi-mcp",
+        "--config",
+        "C:/Users/USERS/generic-openapi-mcp/jetbrains.yaml"
+      ],
+      "cwd": "C:/Users/USERS/generic-openapi-mcp",
+      "enabled": true
+    }
+  }
+}
