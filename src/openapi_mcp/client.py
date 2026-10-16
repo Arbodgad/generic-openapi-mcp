@@ -86,6 +86,16 @@ class GenericHTTPClient:
     ) -> list[str]:
         requirements = operation.security
         if not requirements:
+            default_auth = self.config.auth.get("default")
+            if default_auth is not None and not self._security_schemes():
+                secret = self._apply_auth(
+                    self._implicit_scheme(default_auth),
+                    default_auth,
+                    query,
+                    headers,
+                    cookies,
+                )
+                return [secret] if secret else []
             return []
         schemes = self._security_schemes()
         errors: list[str] = []
@@ -117,6 +127,18 @@ class GenericHTTPClient:
                 errors.append(str(exc))
         raise APIError(
             "No configured authentication satisfies this operation: " + "; ".join(errors)
+        )
+
+    @staticmethod
+    def _implicit_scheme(config: AuthConfig) -> dict[str, Any]:
+        kind = config.type.lower()
+        if kind in {"bearer", "oauth2"}:
+            return {"type": "http", "scheme": "bearer"}
+        if kind == "basic":
+            return {"type": "http", "scheme": "basic"}
+        raise APIError(
+            "APIs without OpenAPI security declarations only support bearer/oauth2/basic "
+            f"authentication, got {config.type!r}"
         )
 
     @staticmethod

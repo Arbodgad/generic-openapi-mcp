@@ -124,6 +124,44 @@ def test_api_key_security_does_not_expose_secret_as_tool_parameter(monkeypatch):
     assert "api_key" not in operation.input_schema["properties"]
 
 
+def test_default_auth_applies_when_spec_declares_no_security(monkeypatch):
+    monkeypatch.setenv("TEAMCITY_TOKEN", "tc-secret")
+    document = {
+        "swagger": "2.0",
+        "paths": {
+            "/agents": {"get": {"responses": {"200": {"description": "ok"}}}}
+        },
+    }
+    config = APIConfig(
+        spec="unused", auth={"default": AuthConfig(type="bearer", token_env="TEAMCITY_TOKEN")}
+    )
+    operation = parse_spec(document, "teamcity")[0]
+    client = GenericHTTPClient("teamcity", config, document, "https://example.test")
+    headers = {}
+    secrets = client._auth(operation, [], headers, {})
+    assert headers["Authorization"] == "Bearer tc-secret"
+    assert secrets == ["tc-secret"]
+
+
+def test_default_auth_ignored_when_spec_declares_security_schemes(monkeypatch):
+    monkeypatch.setenv("UNRELATED_TOKEN", "should-not-be-used")
+    document = {
+        "openapi": "3.0.1",
+        "components": {"securitySchemes": {"access": {"type": "http", "scheme": "bearer"}}},
+        "paths": {
+            "/items": {"get": {"responses": {"200": {"description": "ok"}}}}
+        },
+    }
+    config = APIConfig(
+        spec="unused", auth={"default": AuthConfig(type="bearer", token_env="UNRELATED_TOKEN")}
+    )
+    operation = parse_spec(document, "demo")[0]
+    client = GenericHTTPClient("demo", config, document, "https://example.test")
+    headers = {}
+    client._auth(operation, [], headers, {})
+    assert "Authorization" not in headers
+
+
 def test_multi_api_names_and_bearer_credentials_are_isolated(monkeypatch):
     monkeypatch.setenv("FIRST_TOKEN", "first-secret")
     monkeypatch.setenv("SECOND_TOKEN", "second-secret")
