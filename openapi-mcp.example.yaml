@@ -1,0 +1,15 @@
+apis:
+  tracker:
+    spec: ./specs/tracker-openapi.yaml
+    base_url: https://tracker.example.org/api
+    # List private or loopback hostnames explicitly when the API is self-hosted.
+    allow_hosts: []
+    auth:
+      type: bearer
+      token_env: TRACKER_TOKEN
+    tools:
+      include_methods: [GET]
+      include_paths: []
+      exclude_paths: []
+      allow_write: false
+      allow_delete: false
